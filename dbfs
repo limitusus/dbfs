@@ -1,0 +1,79 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Fuse;
+use Dbfs;
+use Getopt::Long qw(:config posix_default no_ignore_case gnu_compat);;
+use Data::Validator;
+use Pod::Usage;
+
+my $Debug;
+
+main();
+exit 0;
+
+sub main {
+    my %arg;
+    GetOptions(
+        \%arg,
+        "dsn=s",
+        "user=s",
+        "password=s",
+        "table=s",
+        "filename-column=s",
+        "filesize-column:s",
+        "content-column=s",
+        "debug|d+" => \$Debug,
+        "help|h|?" => sub { pod2usage(1); },
+    ) or pod2usage();
+    my $opt_rule = Data::Validator->new(
+        dsn => { isa => 'Str' },
+        user => { isa => 'Str' },
+        password => { isa => 'Str' },
+        table => { isa => 'Str' },
+        'filename-column' => { isa => 'Str' },
+        'filesize-column' => { isa => 'Str', optional => 1 },
+        'content-column' => { isa => 'Str' },
+    );
+    my $opt = $opt_rule->validate(%arg);
+    if ($Debug) {
+        printf STDERR "dsn: %s\n", $opt->{dsn};
+        printf STDERR "user: %s\n", $opt->{user};
+        printf STDERR "password: %s\n", "******";
+        printf STDERR "table: %s\n", $opt->{table};
+        printf STDERR "filename-column: %s\n", $opt->{'filename-column'};
+        printf STDERR "filesize-column: %s\n", (exists $opt->{'filesize-column'} ? $opt->{'filesize-column'} : '(undef)');
+        printf STDERR "content-column: %s\n", $opt->{'content-column'};
+    }
+    my $mountpoint = shift @ARGV if @ARGV;
+    $Dbfs::Config::DSN = $opt->{dsn};
+    $Dbfs::Config::USER = $opt->{user};
+    $Dbfs::Config::PASSWORD = $opt->{password};
+    %Dbfs::Config::COLUMN = (
+        table => $opt->{table},
+        filename => $opt->{'filename-column'},
+        filesize => (exists $opt->{'filesize-column'} ? $opt->{'filesize-column'} : undef),
+        content => $opt->{'content-column'},
+    );
+
+    print "mount $mountpoint\n";
+    Fuse::main(
+        mountpoint => $mountpoint,
+        getattr => 'Dbfs::getattr',
+        getdir => 'Dbfs::getdir',
+        read => 'Dbfs::read',
+    );
+    print "umounted\n";
+}
+
+package Dbfs::Config;
+
+use strict;
+use warnings;
+
+our ($DSN, $USER, $PASSWORD);
+our (%COLUMN);
+
+# vim: set et ts=4 sts=4 :

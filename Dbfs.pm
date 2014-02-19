@@ -5,6 +5,7 @@ use warnings;
 
 use Fuse;
 use DBI;
+use List::Util qw(min);
 
 use POSIX qw(:errno_h);
 
@@ -48,16 +49,6 @@ sub getdir {
     return ('.', '..', @files, 0);
 }
 
-sub open {
-    my ($pathname, $flags, $options) = @_;
-    my ($table, $c_name, $c_size, $c_content) = @Dbfs::Config::COLUMN{qw(table filename filesize content)};
-    my $size = _get_filesize($pathname);
-    if (!defined $size) {
-        return -POSIX::ENOENT();
-    }
-    return 0;
-}
-
 sub read {
     my ($pathname, $req_size, $offset, $fh) = @_;
     my $size = _get_filesize($pathname);
@@ -69,7 +60,7 @@ sub read {
     }
     my ($table, $c_name, $c_size, $c_content) = @Dbfs::Config::COLUMN{qw(table filename filesize content)};
     my $dbh = dbh();
-    my $sth = $dbh->prepare("SELECT $c_content FROM $table WHERE $c_name = ?");
+    my $sth = $dbh->prepare("SELECT SUBSTRING($c_content FROM ($offset + 1) FOR $req_size) FROM $table WHERE $c_name = ?");
     my $path = substr $pathname, 1;
     $sth->execute($path);
     my $row = $sth->fetchrow_arrayref;
@@ -78,7 +69,8 @@ sub read {
     if (!$row) {
         return -POSIX::ENOENT();
     }
-    my $content = substr $row->[0], $offset, $req_size;
+    my $content = $row->[0];
+    my $length = do { use bytes; length $content };
     return $content;
 }
 

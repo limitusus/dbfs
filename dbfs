@@ -76,4 +76,26 @@ use warnings;
 our ($DSN, $USER, $PASSWORD);
 our (%COLUMN);
 
+__END__
+
+=head1 NAME
+
+dbfs - Filesystem which has database as backend
+
+=head1 SYNOPSIS
+
+$ dbfs
+B<--dsn> I<DSN>
+B<--user> I<DB_USER>
+B<--password> I<DB_PASS>
+B<--table> I<DB_TABLE>
+B<--filename-column> I<FILENAME_COLUMN>
+[B<--filesize-column> I<FILESIZE_COLUMN>]
+B<--content-column> I<CONTENT_COLUMN>
+[B<--debug> | B<-d>]
+
+$ dbfs [--help | -h | -?]
+
+=pod
+
 # vim: set et ts=4 sts=4 :

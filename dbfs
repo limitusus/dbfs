@@ -93,9 +93,14 @@ B<--filename-column> I<FILENAME_COLUMN>
 [B<--filesize-column> I<FILESIZE_COLUMN>]
 B<--content-column> I<CONTENT_COLUMN>
 [B<--debug> | B<-d>]
+I<mountpoint>
 
 $ dbfs [--help | -h | -?]
 
-=pod
+=head1 AUTHOR
+
+limitusus E<lt>limitusus@cpan.orgE<gt>
+
+=cut
 
 # vim: set et ts=4 sts=4 :
